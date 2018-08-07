@@ -1,0 +1,180 @@
+<!DOCTYPE html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="X-UA-Compatible" content="IE=edge"><meta name="author" content="yaozongchao"><title>WWDC 2018 Sessions备忘录 · yaozongchao</title><meta name="description" content="概述
+优化、优化、再优化
+AR：USDZ
+通知分组
+应用报告
+Memoji
+Carplay
+Swift 4.2
+Xcode 10
+
+Session412 - Advanced Debugging with Xcode and LLDB
+Xcode触发断点时可以设置打开独立的tab，在preferen"><meta name="keywords"><meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0" name="viewport"><meta content="yes" name="apple-mobile-web-app-capable"><meta content="black" name="apple-mobile-web-app-status-bar-style"><meta content="telephone=no" name="format-detection"><meta name="renderer" content="webkit"><link rel="short icon" href="/images/favicon.png" type="image/x-icon"><link rel="stylesheet" href="/css/style.css"><link rel="stylesheet" href="/css/blog_basic.css"><link rel="stylesheet" href="/css/font-awesome.min.css"><link rel="alternate" type="application/atom+xml" title="ATOM 1.0" href="/atom.xml"></head><body><div class="sidebar animated fadeInDown"><div class="logo-title"><div class="title"><img src="/images/logo@2x.png" style="width:127px;"><h3 title=""><a href="/">yaozongchao</a></h3></div></div><ul class="social-links"></ul><div class="footer"><a target="_blank" href="/"><span>Theme by </span></a><a href="https://www.caicai.me"> CaiCai </a><span>&</span><a href="https://github.com/Ben02/hexo-theme-Anatole"> Ben</a><div class="by_farbox"><a href="https://hexo.io/zh-cn/" target="_blank">Proudly published with Hexo&#65281;</a></div></div></div><div class="main"><div class="page-top animated fadeInDown"><div class="nav"><li><a href="/">Home</a></li><li><a href="/about">Sobre</a></li><li><a href="/archives">Arquivo</a></li><li><a href="/links">Links</a></li></div><div class="information"><div class="back_btn"><li><a class="fa fa-chevron-left" onclick="window.history.go(-1)"> </a></li></div><div class="avatar"><img></div></div></div><div class="autopagerize_page_element"><div class="content"><div class="post-page"><div class="post animated fadeInDown"><div class="post-title"><h3><a>WWDC 2018 Sessions备忘录</a></h3></div><div class="post-content"><h3 id="概述"><a href="#概述" class="headerlink" title="概述"></a>概述</h3><ul>
+<li>优化、优化、再优化</li>
+<li>AR：USDZ</li>
+<li>通知分组</li>
+<li>应用报告</li>
+<li><code>Memoji</code></li>
+<li><code>Carplay</code></li>
+<li><code>Swift 4.2</code></li>
+<li><code>Xcode 10</code></li>
+</ul>
+<h3 id="Session"><a href="#Session" class="headerlink" title="Session"></a>Session</h3><h4 id="412-Advanced-Debugging-with-Xcode-and-LLDB"><a href="#412-Advanced-Debugging-with-Xcode-and-LLDB" class="headerlink" title="412 - Advanced Debugging with Xcode and LLDB"></a>412 - Advanced Debugging with Xcode and LLDB</h4><ul>
+<li>Xcode触发断点时可以设置打开独立的tab，在<code>preference/behaviors</code>项目中，<code>pause</code>设置<code>open a new tab</code></li>
+<li>不用Rebuild和Rerun来调试代码，简而言之就是善用断点和expression的组合，具体方法如下：<ul>
+<li>改变代码执行逻辑，如果只执行一次，可以在lldb中，执行<code>expression variable = false</code>之类的代码，让逻辑走到另一分支；如果想每次都执行，可以在分支处，编辑断点，在触发时执行action，将<code>expression variable = false</code>写到action中，并选择<code>automatically continue</code></li>
+<li>利用<code>Symbolic Breakpoint</code>实现条件触发，增加<code>Symbol</code>，比如<code>-[UILabel setText:]</code>（UILabel属于UIKit，是OC语法，所以就算是在Swift语境中，也是用OC语句），触发时进入汇编，这时因为没有上下文，无法打印堆栈中的变量，但是可以<code>po arg</code>来打印入参，比如<code>po $arg1</code>，打印第一个入参（方法的接收者），<code>po (SEL)$arg2</code>打印第二个入参（方法的Selector），<code>po $arg3</code>等，为了避免频繁触发，可以在<code>Symbolic Breakpoint</code>中设置condition，只有condition的返回值为true的时候，断点才会触发；</li>
+<li>可以在断点处设置另一个条件断点（<code>Symbolic Breakpoint</code>），这样可以实现在断点触发时，即满足一定条件时，再去触发条件断点，比如在断点的action中设置<code>breakpoint set --one-shot true --name &quot;-[UILabel setText:]&quot;</code>，<code>--one-shot</code>代表这是一个临时断点，触发之后会自动删除</li>
+<li>让Xcode跳过执行某一行，然后通过断点加<code>expression</code>的组合，可以变换调试逻辑，方法一，断点触发后，右侧有绿色的handler bar，将此bar拖拽到下一行。方法二，在断点处，增加action1，<code>thread jump --by 1</code>（跳过一行），增加action2，<code>expression xxxfunction</code></li>
+<li>自定义desription，swift中是实现<code>CustomDebugStringConvertible</code>协议，重写<code>debugDescription</code>方法，这样po的时候就能打印出自定义的描述。用p来打印的话会使用lldb内置的description来描述，通常情况下会包含对象的每个属性</li>
+<li>使用Xcode中的<code>WatchPoint</code>来监听属性的改变，具体方法就是在查看变量值的时候，在变量上右键选择<code>Watch</code>，则属性改变时会自动触发断点</li>
+<li>在Swift语境中执行OC的语法，可以在lldb中使用<code>expression -l objc -O -- [`self.view` recursiveDescription]</code></li>
+<li>在lldb中设置别名<code>command alias poc expression -l objc -O --</code>，然后执行<code>poc 0x7fb888888888</code>（swift中通过打印地址来查看信息，必须要在oc语境中进行）</li>
+<li><code>po unsafeBitCast(0x7fb888888888, to: ScoreboardView.self)</code>也可以用来打印地址</li>
+<li>在lldb通过po或expression更改UIView的布局后，界面不会马上刷新，执行<code>expression CATransaction.flush()</code>之后会立即刷新</li>
+<li>在lldb中导入python文件（使用python文件中的命令），执行<code>command script import ~/nudge.py</code></li>
+<li>使用nudge.py来辅助调试Layout，<a href="https://developer.apple.com/videos/play/wwdc2018/412/" target="_blank" rel="noopener">链接</a></li>
+</ul>
+</li>
+<li><a href="https://github.com/facebook/chisel" target="_blank" rel="noopener">chisel</a></li>
+<li><a href="https://juejin.im/post/5b1cd870e51d4506dc0ac76c" target="_blank" rel="noopener">WWDC 2018：效率提升爆表的 Xcode 和 LLDB 调试技巧</a></li>
+</ul>
+<h4 id="408-Building-Faster-in-Xcode"><a href="#408-Building-Faster-in-Xcode" class="headerlink" title="408 - Building Faster in Xcode"></a>408 - Building Faster in Xcode</h4><ul>
+<li>将编译过程并行化：默认</li>
+<li>通过指定输入、输出文件减少脚本的重复编译：增量编译</li>
+<li>测量你的编译时间，找到优化的突破点：<code>Timing Summary</code></li>
+<li>减少 Swift 文件和工程之间的依赖</li>
+<li>处理复杂的表达式：减少类型推断</li>
+<li>减少 Objective-C 和 Swift 暴露的接口</li>
+</ul>
+<h4 id="405-Measuring-Performance-Using-Logging"><a href="#405-Measuring-Performance-Using-Logging" class="headerlink" title="405 - Measuring Performance Using Logging"></a>405 - Measuring Performance Using Logging</h4><ul>
+<li><p>使用系统提供的signpost来打log，记录执行时间</p>
+<ul>
+<li><p>同步方法</p>
+  <figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line"><span class="comment">// 注意配对</span></span><br><span class="line"><span class="keyword">import</span> os.signpost</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> refreshLog = <span class="type">OSLog</span>(subsystem: <span class="string">"com.example.your-app"</span>, category: <span class="string">"RefreshOperations"</span>)</span><br><span class="line"></span><br><span class="line"><span class="comment">// refreshLog = .disabled // 关闭OSLog</span></span><br><span class="line"></span><br><span class="line">os_signpost(.begin, log: refreshLog, name: <span class="string">"Refresh Panel"</span>)</span><br><span class="line"><span class="keyword">for</span> element <span class="keyword">in</span> panel.elements &#123;</span><br><span class="line">    os_signpost(.begin, log: refreshLog, name: <span class="string">"Fetch Asset"</span>)</span><br><span class="line">    fetchAsset(<span class="keyword">for</span>: element)</span><br><span class="line">    os_signpost(.end, log: refreshLog, name: <span class="string">"Fetch Asset"</span>)</span><br><span class="line">&#125;</span><br><span class="line">os_signpost(.end, log: refreshLog, name: <span class="string">"Refresh Panel"</span>)</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>异步方法</p>
+  <figure class="highlight swift"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br></pre></td><td class="code"><pre><span class="line"><span class="keyword">import</span> os.signpost</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> refreshLog = <span class="type">OSLog</span>(subsystem: <span class="string">"com.example.your-app"</span>, category: <span class="string">"RefreshOperations"</span>)</span><br><span class="line"></span><br><span class="line"><span class="keyword">let</span> spidForRefresh = <span class="type">OSSignpostID</span>(log: refreshLog)</span><br><span class="line">os_signpost(.begin, log: refreshLog, name: <span class="string">"Refresh Panel"</span>, signpostID: spidForRefresh)</span><br><span class="line"><span class="keyword">for</span> element <span class="keyword">in</span> panel.elements &#123;</span><br><span class="line">    <span class="keyword">let</span> spid = <span class="type">OSSignpostID</span>(log: refreshLog, object: element)</span><br><span class="line">    os_signpost(.begin, log: refreshLog, name: <span class="string">"Fetch Asset"</span>, signpostID: spid)</span><br><span class="line">    fetchAssetAsync(<span class="keyword">for</span>: element) &#123;</span><br><span class="line">        os_signpost(.end, log: refreshLog, name: <span class="string">"Fetch Asset"</span>, signpostID: spid)</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br><span class="line">notifyWhenDone &#123;</span><br><span class="line">    os_signpost(.end, log: refreshLog, name: <span class="string">"Refresh Panel"</span>, signpostID: spidForRefresh)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+</ul>
+<h4 id="227-Optimizing-App-Assets"><a href="#227-Optimizing-App-Assets" class="headerlink" title="227 - Optimizing App Assets"></a>227 - Optimizing App Assets</h4><ul>
+<li>建议使用App Assets来管理图片</li>
+<li>优化项：<ul>
+<li>图片压缩：无损和有损</li>
+<li>元数据共用</li>
+<li>颜色配置文件保持一致</li>
+<li>拉伸图片在编译期决定</li>
+<li>可以使用矢量图</li>
+<li>二进制文件容器<code>NSDataAsset</code>，例如可以根据不同设备加在不同的plist</li>
+</ul>
+</li>
+</ul>
+<h4 id="417-Testing-Tips-amp-Tricks"><a href="#417-Testing-Tips-amp-Tricks" class="headerlink" title="417 - Testing Tips &amp; Tricks"></a>417 - Testing Tips &amp; Tricks</h4><ul>
+<li><code>XCTestExpectation/XCTKVOExpectation/XCTNSNotificationExpectation/XCTDarwinNotificationExpectation/XCTDarwinNotificationExpectation</code></li>
+<li>运行单元测试，需要<code>Appdelegate</code>中的<code>didFinishLaunchWithOptions</code>执行完，但是不见得这个过程中的每一步都和单元测试有关，为了加快单元测试的执行速度，可以将步骤区别加载，方法是在<code>Scheme</code>设置中，在Test那一项的Arguments分页中增加启动的环境变量，如<code>IS_UNIT_TESTING  1</code>，然后在代码中做如下修改:  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br></pre></td><td class="code"><pre><span class="line">func application(_ application: UIApplication, didFinishLaunchingWithOptions opts: _) -&gt; Bool &#123;</span><br><span class="line">    let isUnitTesting = ProcessInfo.processInfo.environment[&quot;IS_UNIT_TESTING&quot;] == &quot;1&quot;</span><br><span class="line">    if isUnitTesting == false &#123;</span><br><span class="line">        // Do UI-related setup, which can be skipped when testing</span><br><span class="line">    &#125;</span><br><span class="line">    return true</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+<h4 id="414-Understanding-Crashes-and-Crash-Logs"><a href="#414-Understanding-Crashes-and-Crash-Logs" class="headerlink" title="414 - Understanding Crashes and Crash Logs"></a>414 - Understanding Crashes and Crash Logs</h4><ul>
+<li>Crash Log中的崩溃地址可能蕴含额外信息，比如<code>KERN_INVALID_ADDRESS at 7fdd5e70700</code>和<code>MALLOC_TINY 7fdd5e400000-00007fdd5e800000</code>，<code>7fdd5e70700</code>正好位于<code>7fdd5e400000 ~ 00007fdd5e800000</code>的区间内，说明崩溃地址是malloc出来的，objc_release一个对象时，会将对象的isa指针填入free-list-ptr，并将地址故意做旋转，从而有意地触发重复释放时的崩溃</li>
+<li><code>0x00000001000022ee @objc LoginViewController.__ivar_destroyer + 42</code>，这个42是线索所在，代表在汇编语句中的偏移，我们可以借助汇编来观察是哪个属性重复释放造成的崩溃，在lldb中执行<code>command script import lldb.macosx.crashlog</code>，再执行<code>crashlog /Users/.../RideSharingApp-2018-05-24-1.crash</code>，将crash log加载进lldb环境中，执行<code>disassemble -a 0x1000022ee</code>打开汇编地址，然后找偏移42的语句的前一行，其中隐含了objc_release重复释放的属性信息，定位出该信息后，可以打开<code>Address Sanitizer</code>和<code>Zombies</code>选项，按交互步骤复现</li>
+<li>常见的crash，<code>Crash in objc_msgSend or retain/release</code>，<code>Unrecognized selector exception</code>，<code>abort() inside malloc/free</code></li>
+<li>打开scheme中的<code>Thread Sanitizer</code>选项，借助debugger来定位多线程问题</li>
+<li><p>一个线程安全的类</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br></pre></td><td class="code"><pre><span class="line">public class ImageCache &#123;</span><br><span class="line">    private var storage: [String: UIImage] = [:]</span><br><span class="line">    private let queue = DispatchQueue(label: &quot;com.xxxx.imagecache.queue&quot;)</span><br><span class="line">    // 用下标存取值，这样可以将存取统一成一个入口</span><br><span class="line">    public subscript(key: String) -&gt; UIImage? &#123;</span><br><span class="line">        get &#123;</span><br><span class="line">            return queue.sync &#123;</span><br><span class="line">                return storage[key]</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">        </span><br><span class="line">        set &#123;</span><br><span class="line">            queue.sync &#123;</span><br><span class="line">                storage[key] = newValue</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>将线程或者队列命名有助于debug</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br></pre></td><td class="code"><pre><span class="line">// Naming a DispatchQueue</span><br><span class="line">let queue = DispatchQueue(label: &quot;com.xxxx.myapp.networking&quot;)</span><br><span class="line"></span><br><span class="line">// Naming a OperationQueue</span><br><span class="line">let operationQueue = OperationQueue()</span><br><span class="line">operationQueue.name = &quot;Networking OperationQueue&quot;</span><br><span class="line"></span><br><span class="line">// Naming a Thread</span><br><span class="line">let thread = Thread(...)</span><br><span class="line">thread.name = &quot;Networking Thread&quot;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p><a href="https://juejin.im/post/5b1e833ce51d450686186557" target="_blank" rel="noopener">WWDC 2018：理解崩溃以及崩溃日志</a></p>
+</li>
+<li><a href="http://wufawei.com/2014/03/symbolicating-ios-crash-logs/" target="_blank" rel="noopener">分析iOS Crash文件：符号化iOS Crash文件的3种方法</a></li>
+</ul>
+<h4 id="229-Using-Collections-Effectively"><a href="#229-Using-Collections-Effectively" class="headerlink" title="229 - Using Collections Effectively"></a>229 - Using Collections Effectively</h4><ul>
+<li><p><code>Collection</code>协议</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br><span class="line">15</span><br><span class="line">16</span><br><span class="line">17</span><br><span class="line">18</span><br><span class="line">19</span><br><span class="line">20</span><br></pre></td><td class="code"><pre><span class="line">protocol Collection : Sequence &#123; </span><br><span class="line"></span><br><span class="line">    // 集合中元素的类型</span><br><span class="line">    associatedtype Element </span><br><span class="line"></span><br><span class="line">    // 索引类型, 需要遵守Comparable协议</span><br><span class="line">    associatedtype Index : Comparable </span><br><span class="line"></span><br><span class="line">    // 遍历时所用到的方法了, 即通过索引查询到对应的元素</span><br><span class="line">    subscript(position: Index) -&gt; Element &#123; get &#125; </span><br><span class="line"></span><br><span class="line">    // 开始索引</span><br><span class="line">    var startIndex: Index &#123; get &#125; </span><br><span class="line"></span><br><span class="line">    // 结束索引</span><br><span class="line">    var endIndex: Index &#123; get &#125; </span><br><span class="line"></span><br><span class="line">    // 通过一个索引, 获取它后面的索引</span><br><span class="line">    func index(after i: Index) -&gt; Index </span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>协议扩展<br>  <img src="https://upload-images.jianshu.io/upload_images/11994763-4b982b97d2237459.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="协议扩展"></p>
+</li>
+<li>索引<ul>
+<li>取第一个元素：<code>first</code>，好于下标取值，不用判断index是否越界</li>
+</ul>
+</li>
+<li>slice<ul>
+<li>取第二个元素：<code>self.dropFirst().first</code></li>
+</ul>
+</li>
+<li>lazy<br>  <img src="https://upload-images.jianshu.io/upload_images/11994763-14d4f861dc7a22ec.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="step1"><br>  <img src="https://upload-images.jianshu.io/upload_images/11994763-e2922bbc156d54ee.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="step2"><br>  <img src="https://upload-images.jianshu.io/upload_images/11994763-300cbdc7af4fbf35.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="step3"></li>
+<li><code>Collection</code>不是线程安全<ul>
+<li>自行处理成线程安全，单线程或线程同步技术</li>
+<li><code>Thread Sanitizer</code>调试</li>
+</ul>
+</li>
+<li>尽量使用带capacity的初始化函数</li>
+<li>避免桥接<br>  <img src="https://upload-images.jianshu.io/upload_images/11994763-7ccea9c6900304bf.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="step1"><br>  <img src="https://user-gold-cdn.xitu.io/2018/6/13/163f7804afa06041?imageView2/0/w/1280/h/960/format/webp/ignore-error/1" alt="reason"><br>  <img src="https://upload-images.jianshu.io/upload_images/11994763-ded5be91e74f526d.png?imageMogr2/auto-orient/strip%7CimageView2/2/w/1240" alt="step2"></li>
+</ul>
+<h4 id="416-iOS-Memory-Deep-Dive"><a href="#416-iOS-Memory-Deep-Dive" class="headerlink" title="416 - iOS Memory Deep Dive"></a>416 - iOS Memory Deep Dive</h4><ul>
+<li>UIImage的内存占用大小，2048px X 1536px 图片大小为536KB，但是内存占用为2048 x 1536 x 4(4 bytes per pixel) = 10MB</li>
+<li>UIImage的加载过程，load -&gt; decode -&gt; render</li>
+<li>UIGraphicsBeginImageContextWithOptions总是得到SRGB格式的图片，4字节每像素，在iOS 10中引入的新API，UIGraphicImageRender会对性能有较大提升，尤其是在iOS 12中，会自动挑选合适的图片格式来decode，如纯色的黑白图片会使用1字节每像素的格式，减少了75%的内存占用</li>
+<li>善用UIImageView的tintColor方法，可以在不分配新内存的情况下，复用图片并且改变颜色</li>
+<li>缩放图片，使用ImageIO，比直接操作UIImage性能要更好，<code>CGImageSourceCreateThumbnailAtIndex(imageSource, 0, options)</code></li>
+<li>unload large resources you cannot see，<code>DidEnterBackground</code>时UnloadImages，<code>WillEnterForeground</code>时loadImages；<code>viewDidDisappear</code>时unloadImages，<code>viewWillAppear</code>时loadImages</li>
+</ul>
+<h4 id="220-High-Performance-Auto-Layout"><a href="#220-High-Performance-Auto-Layout" class="headerlink" title="220 - High Performance Auto Layout"></a>220 - High Performance Auto Layout</h4><ul>
+<li><code>updateConstraints</code>做了哪些事情<ul>
+<li><code>Render Loop</code>每秒执行120次，包含3个步骤，<code>updateConstraints</code>，<code>Layout</code>，<code>Display</code></li>
+<li><code>updateContraints</code>从子页面向<code>UIWindow</code>依次执行</li>
+<li><code>layout</code>从<code>UIWindow</code>向子页面依次执行</li>
+</ul>
+</li>
+<li>inequality、setConstant、priority的代价不高</li>
+<li>不要把约束全部remove，保留不变的，添加删除可变的</li>
+<li>intrinsic Content Size: 算出Size后交给engine<ul>
+<li>Not all views need it</li>
+<li>Views with non view content:<ul>
+<li>UIImageView returns its image size</li>
+<li>UILabel returns its text size</li>
+</ul>
+</li>
+<li>UIView uses it to make constraints</li>
+</ul>
+</li>
+<li>Systemm Layout Size Fitting Size: 从engine获取Size，这个操作代价很大<ul>
+<li>Engine is created</li>
+<li>Constraints are added</li>
+<li>Layout is solved</li>
+<li>Size of the top view is returned</li>
+<li>Engine is discarded</li>
+</ul>
+</li>
+</ul>
+<h4 id="219-Image-and-Graphics-Best-Practices"><a href="#219-Image-and-Graphics-Best-Practices" class="headerlink" title="219 - Image and Graphics Best Practices"></a>219 - Image and Graphics Best Practices</h4><ul>
+<li>Image的decode主要使用cpu</li>
+<li><p>图片大，展示区域小，要使用downsampling技术，使decode出的Image buffer减小</p>
+<ul>
+<li><p>load(CGImageSource) -&gt; Thumbnail -&gt; Decode -&gt; UIImage -&gt; Render(UIImageView)</p>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br><span class="line">13</span><br><span class="line">14</span><br></pre></td><td class="code"><pre><span class="line">func downsample(imageAt imageURL: URL, to pointSize: CGSize, scale: CGFloat) -&gt; UIImage &#123;</span><br><span class="line">	let sourceOpt = [kCGImageSourceShouldCache : false] as CFDictionary</span><br><span class="line">	// 其他场景可以用createwithdata (data并未decode,所占内存没那么大),</span><br><span class="line">	let source = CGImageSourceCreateWithURL(imageURL as CFURL, sourceOpt)!</span><br><span class="line"></span><br><span class="line">	let maxDimension = max(pointSize.width, pointSize.height) * scale</span><br><span class="line">	let downsampleOpt = [kCGImageSourceCreateThumbnailFromImageAlways : true,</span><br><span class="line">    kCGImageSourceShouldCacheImmediately : true ,</span><br><span class="line">    kCGImageSourceCreateThumbnailWithTransform : true,</span><br><span class="line">    kCGImageSourceThumbnailMaxPixelSize : maxDimension] as CFDictionary</span><br><span class="line">	let downsampleImage = CGImageSourceCreateThumbnailAtIndex(source, 0, downsampleOpt)!</span><br><span class="line"></span><br><span class="line">	return UIImage(cgImage: downsampleImage)</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+<figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br></pre></td><td class="code"><pre><span class="line">// 下面的方法是不好的，因为每次复用的时候都会用cpu去decode图片（downsample时），所以不可避免造成卡顿，可以用下面的两种方式解决</span><br><span class="line">func collectionView(_ collectionView: UICollectionView, cellForItemAt indexPath: IndexPath) -&gt; UICollectionViewCell &#123;</span><br><span class="line">    let cell = collectionView.dequeueReusableCell(WithReuseIdentifier: &quot;Cell&quot;, for: indexPath) as! MyCollectionViewCell</span><br><span class="line">    cell.layoutIfNeeded() // Ensure imageView is its final size.</span><br><span class="line">    </span><br><span class="line">    let imageViewSize = cell.imageView.bounds</span><br><span class="line">    let scale = collectionView.traitCollection.displayScale</span><br><span class="line">    cell.imageView.image = downsample(imageAt: imageURLs[indexPath.item], to: imageViewSize, scale: scale)</span><br><span class="line">    </span><br><span class="line">    return cell</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+</ul>
+</li>
+<li><p>Prefetching</p>
+</li>
+<li><p>Background decoding/downsampling</p>
+  <figure class="highlight plain"><table><tr><td class="gutter"><pre><span class="line">1</span><br><span class="line">2</span><br><span class="line">3</span><br><span class="line">4</span><br><span class="line">5</span><br><span class="line">6</span><br><span class="line">7</span><br><span class="line">8</span><br><span class="line">9</span><br><span class="line">10</span><br><span class="line">11</span><br><span class="line">12</span><br></pre></td><td class="code"><pre><span class="line">let serialQueue = DispatchQueue(label: &quot;Decode queue&quot;)</span><br><span class="line">func colletionView(_ colletionView: UICollectionView, prefetchItemsAt indexPaths: [IndexPath]) &#123;</span><br><span class="line">    // Asynchronously decode and downsample every image we are about to show</span><br><span class="line">    for indexPath in indexPaths &#123;</span><br><span class="line">        serialQueue.async &#123;</span><br><span class="line">            let downsampledImage = downsample(images[indexPath.row])</span><br><span class="line">            DispatchQueue.main.async &#123;</span><br><span class="line">                self.update(at: indexPath, with: downsampledImage)</span><br><span class="line">            &#125;</span><br><span class="line">        &#125;</span><br><span class="line">    &#125;</span><br><span class="line">&#125;</span><br></pre></td></tr></table></figure>
+</li>
+<li><p>推荐使用Image Assets存放图片</p>
+</li>
+<li>如果图片有固定尺寸，用图片，不用矢量图</li>
+<li>为UIView设置backgroundColor不会创建backing store，但是用pattern color除外，不用pattern color作为background color</li>
+<li>尽量不用派生UIView，去重写draw方法来画图</li>
+<li>maskView和maskLayer会占用额外内存</li>
+<li>鼓励使用UIImageView，尤其是单色图片</li>
+<li>对单色文字，UILabel也做了优化，减少了backing store</li>
+<li>多用Core Image创建CIImage，然后UIImage.init(ciImage:)，并交给UIImageView去显示，UIImageView会自动将其交给GPU处理渲染</li>
+<li><a href="https://juejin.im/post/5b1a7c2c5188257d5a30c820" target="_blank" rel="noopener">WWDC2018 图像最佳实践</a></li>
+</ul>
+<h4 id="715-Introducing-Network-framework-A-modern-alternative-to-Sockets"><a href="#715-Introducing-Network-framework-A-modern-alternative-to-Sockets" class="headerlink" title="715 - Introducing Network.framework: A modern alternative to Sockets"></a>715 - Introducing Network.framework: A modern alternative to Sockets</h4><p><a href="https://juejin.im/post/5b1b64645188257d507be4de" target="_blank" rel="noopener">WWDC 2018：Network.framework 入门，现代化 Socket 编程的新选择</a></p>
+</div><div class="post-footer"><div class="meta"><div class="info"><i class="fa fa-sun-o"></i><span class="date">2018-08-07</span><i class="fa fa-tag"></i></div></div></div></div><div class="share"><div class="evernote"><a class="fa fa-bookmark" href="javascript:(function(){EN_CLIP_HOST='http://www.evernote.com';try{var%20x=document.createElement('SCRIPT');x.type='text/javascript';x.src=EN_CLIP_HOST+'/public/bookmarkClipper.js?'+(new%20Date().getTime()/100000);document.getElementsByTagName('head')[0].appendChild(x);}catch(e){location.href=EN_CLIP_HOST+'/clip.action?url='+encodeURIComponent(location.href)+'&amp;title='+encodeURIComponent(document.title);}})();" ref="nofollow" target="_blank"></a></div><div class="weibo"><a class="fa fa-weibo" href="javascript:void((function(s,d,e){try{}catch(e){}var f='http://service.weibo.com/share/share.php?',u=d.location.href,p=['url=',e(u),'&amp;title=',e(d.title),'&amp;appkey=2924220432'].join('');function a(){if(!window.open([f,p].join(''),'mb',['toolbar=0,status=0,resizable=1,width=620,height=450,left=',(s.width-620)/2,',top=',(s.height-450)/2].join('')))u.href=[f,p].join('');};if(/Firefox/.test(navigator.userAgent)){setTimeout(a,0)}else{a()}})(screen,document,encodeURIComponent));"></a></div><div class="twitter"><a class="fa fa-twitter" href="http://twitter.com/home?status=,http://yoursite.com/2018/08/07/WWDC 2018 Sessions备忘录/,yaozongchao,WWDC 2018 Sessions备忘录,;"></a></div></div><div class="pagination"><ul class="clearfix"><li class="next pagbuttons"><a class="btn" role="navigation" href="/2018/08/07/GCD的使用模板/" title="GCD的使用模板">Próximo post</a></li></ul></div></div></div></div></div><script src="/js/jquery.js"></script><script src="/js/jquery-migrate-1.2.1.min.js"></script><script src="/js/jquery.appear.js"></script></body></html>
