@@ -1,0 +1,59 @@
+ <!--**
+* index.html
+* iOS渠道包一键安装跳转页面。
+* Created by pcjbird on 2015-05-28
+* Copyright (c) 2015年 Zero Status. All rights reserved.
+*-->
+<html>
+<head>
+<title>iOS 一键安装</title>
+<meta http-equiv="Content-Type" content="text/HTML; charset=utf-8">
+<meta content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=0;" name="viewport" />
+
+<script type="text/javascript">
+
+function doLocation(url)
+{
+ var a = document.createElement("a");
+ if(!a.click) 
+ {
+ window.location = url;
+ return;
+ }
+ a.setAttribute("href", url);
+ a.style.display = "none";
+ document.body.appendChild(a);
+ a.click();
+}
+
+function getQueryString(str)
+{
+ var rs=new RegExp("(^|)"+str+"=([^&]*)(&|$)","gi").exec(locString),tmp;
+ if(tmp=rs)return tmp[2];
+ return "";
+}
+
+</script>
+
+</head>
+
+<body>
+下载中...
+<script type="text/javascript">
+
+var locString=String(window.document.location.href);
+var cid = getQueryString('cid');
+var sslServer = 'https://www.lessney.com/';
+var mainChannelId = 2;
+var curVersionName = '1.0.3';
+if (!cid) 
+{
+ cid = mainChannelId;
+}
+
+doLocation('itms-services://?action=download-manifest&url=' + encodeURIComponent(sslServer + 'install.php?v=' + curVersionName + '&cid=' + cid));
+
+
+</script>
+</body>
+</html>
